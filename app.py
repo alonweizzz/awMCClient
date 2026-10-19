@@ -104,12 +104,18 @@ class Launcher:
         threading.Thread(target=worker, daemon=True).start()
 
     def login(self):
+        config = load_config()
+        if not config.get("client_id", "").strip() or config.get("client_id", "").startswith("PASTE_") or not config.get("redirect_uri", "").strip():
+            self.status.set("Configure your Microsoft application first.")
+            messagebox.showinfo("Microsoft setup", "To sign in, enter a Microsoft application Client ID with Minecraft API access. The next window will save these settings.")
+            self.configure()
+            return
         def task():
             config = load_config()
             client_id = config.get("client_id", "").strip()
             redirect = config.get("redirect_uri", "").strip()
             if not client_id or client_id.startswith("PASTE_") or not redirect:
-                raise ValueError("Create config.json from config.example.json and configure your approved Microsoft app.")
+                raise ValueError("Microsoft app configuration is missing. Use Configure Microsoft App.")
             url, state, verifier = mcl.microsoft_account.get_secure_login_data(client_id, redirect)
             self.set_status("Browser opened. Sign in and paste the complete redirected URL.")
             webbrowser.open(url)
