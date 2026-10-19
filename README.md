@@ -1,28 +1,26 @@
-# awMC Client v0.2 Alpha
+# awMC Client v0.3 Alpha
 
-A lightweight Windows app that **opens the official Minecraft Launcher**.
+Lightweight personal Windows companion for the **official Minecraft Launcher**. No Azure configuration is needed.
 
-## Why this approach?
-No Azure app registration, custom Microsoft OAuth, credentials, or Minecraft API permissions are needed by awMC Client. **Sign in directly in the official Minecraft Launcher**, which handles the account and game installation.
+## Features
+- Open the official Minecraft Launcher (Minecraft URI handler with executable fallback)
+- Dark / Light theme (saved between launches)
+- Quick access to Minecraft's default `.minecraft` folder
+- Shortcuts to worlds (`saves`), resource packs and mods
+- Official Minecraft download website shortcut
 
-## Windows EXE
-1. Open the repository's **Actions → Build Windows EXE**.
-2. Download the successful run's **awMCClient-Windows-Alpha** artifact.
-3. Extract the ZIP and run `awMCClient.exe`.
-4. Click **OPEN MINECRAFT LAUNCHER**.
-5. Sign in and select the desired version **inside the official launcher**.
+## Download Windows EXE
+1. Go to [GitHub Actions](https://github.com/alonweizzz/awMCClient/actions/workflows/build-windows.yml).
+2. Open the latest **successful** Build Windows EXE run.
+3. Download **awMCClient-Windows-Alpha** under Artifacts and extract `awMCClient.exe`.
 
-You must install the official Minecraft Launcher first: https://www.minecraft.net/download
+## Requirements
+Windows 10/11, the official Minecraft Launcher, and a Minecraft account/license to play.
 
-## Development
-Python 3.12+:
+## Run from source
 ```powershell
 py app.py
 ```
 
-## Important limitations
-- This app **does not directly start Minecraft Java**. It opens the official launcher, where you select and start the game.
-- Version selection (including 26.2 and 26.3 if offered) takes place in the official launcher. awMC Client does not control or install specific versions.
-- The game requires a valid license.
-- This is an unofficial personal project, not affiliated with Mojang or Microsoft.
-- No account passwords or tokens are collected or stored.
+## Limitations
+This companion **opens the official launcher**, not Minecraft Java directly. Sign in, select versions (including 26.2/26.3 if available), and launch the game from the official launcher. Folder shortcuts target the default `%APPDATA%\\.minecraft` location. Mods require a compatible mod loader; opening the mods folder alone does not install one. This app is unofficial and not affiliated with Mojang/Microsoft.
