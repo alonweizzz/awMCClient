@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import json
 import os
+import sys
+import keyring
 import subprocess
 import threading
 import tkinter as tk
@@ -12,9 +14,10 @@ from tkinter import messagebox, ttk
 
 import minecraft_launcher_lib as mcl
 
-ROOT = Path(__file__).resolve().parent
-CONFIG = ROOT / "config.json"
-GAME_DIR = Path(os.environ.get("APPDATA", str(Path.home()))) / ".awMCClient" / "minecraft"
+ROOT = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
+DATA_DIR = Path(os.environ.get("APPDATA", str(Path.home()))) / ".awMCClient"
+CONFIG = DATA_DIR / "config.json"
+GAME_DIR = DATA_DIR / "minecraft"
 VERSIONS = ("26.3", "26.2")
 BG = "#101820"
 PANEL = "#1d2a32"
@@ -39,6 +42,8 @@ class Launcher:
         self.version = tk.StringVar(value=VERSIONS[0])
         self.status = tk.StringVar(value="Ready · Sign in to play")
         self.account = None
+        self.client_id = None
+        self.redirect_uri = None
         self.busy = False
 
         tk.Label(root, text="awMC Client", font=("Segoe UI", 26, "bold"),
@@ -57,6 +62,7 @@ class Launcher:
                                       command=self.login, font=("Segoe UI", 11),
                                       bg="#354c59", fg="white", relief="flat", padx=15, pady=7)
         self.login_button.pack(fill="x")
+        tk.Button(panel, text="Configure Microsoft App", command=self.configure, bg="#354c59", fg="white", relief="flat").pack(fill="x", pady=(6, 0))
         self.play_button = tk.Button(panel, text="INSTALL & PLAY", command=self.play,
                                      font=("Segoe UI", 13, "bold"), bg=GREEN, fg="#122018",
                                      relief="flat", padx=15, pady=10, state="disabled")
@@ -129,6 +135,9 @@ class Launcher:
             data = mcl.microsoft_account.complete_login(
                 client_id, None, redirect, code, verifier
             )
+            self.client_id, self.redirect_uri = client_id, redirect
+            if data.get("refresh_token"):
+                keyring.set_password("awMCClient", client_id, data["refresh_token"])
             self.account = {
                 "username": data["name"],
                 "uuid": data["id"],
@@ -137,9 +146,34 @@ class Launcher:
             self.set_status("Signed in as " + data["name"])
         self.run_worker(task)
 
+    def configure(self):
+        from tkinter import simpledialog
+        config = load_config()
+        cid = simpledialog.askstring("Microsoft App", "Application (client) ID:", initialvalue=config.get("client_id", ""), parent=self.root)
+        if cid is None:
+            return
+        redirect = simpledialog.askstring("Microsoft App", "Registered redirect URI:", initialvalue=config.get("redirect_uri", "http://localhost"), parent=self.root)
+        if redirect is None:
+            return
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        CONFIG.write_text(json.dumps({"client_id": cid.strip(), "redirect_uri": redirect.strip()}, indent=2), encoding="utf-8")
+        self.status.set("Microsoft app settings saved. You can sign in now.")
+
     def play(self):
         def task():
             version = self.version.get()
+            config = load_config()
+            cid, redirect = config.get("client_id", ""), config.get("redirect_uri", "")
+            refresh = keyring.get_password("awMCClient", cid) if cid else None
+            if refresh:
+                try:
+                    fresh = mcl.microsoft_account.complete_refresh(cid, None, redirect, refresh)
+                    self.account = {"username": fresh["name"], "uuid": fresh["id"], "token": fresh["access_token"]}
+                    if fresh.get("refresh_token"):
+                        keyring.set_password("awMCClient", cid, fresh["refresh_token"])
+                except Exception:
+                    self.set_status("Session refresh failed. Sign in again.")
+                    raise ValueError("Microsoft session expired. Please sign in again.")
             if version not in VERSIONS:
                 raise ValueError("Unsupported version")
             self.set_status(f"Checking official Mojang manifest for {version}...")
