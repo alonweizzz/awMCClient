@@ -1,39 +1,28 @@
-# awMC Client v0.1 (Alpha)
+# awMC Client v0.2 Alpha
 
-A lightweight **personal Minecraft: Java Edition launcher** for Windows, targeting **26.2** and **26.3**.
+A lightweight Windows app that **opens the official Minecraft Launcher**.
 
-> This is an early prototype, not a modified Minecraft game client. It downloads official game files and launches Java Edition with a legitimate Microsoft/Minecraft account.
+## Why this approach?
+No Azure app registration, custom Microsoft OAuth, credentials, or Minecraft API permissions are needed by awMC Client. **Sign in directly in the official Minecraft Launcher**, which handles the account and game installation.
 
-## Requirements
-- Windows 10/11
-- Python 3.10+ installed and added to PATH
-- An owned Minecraft: Java Edition license
-- Internet access for initial installation and login
-- A Microsoft Entra application client ID approved to use the Minecraft API (see [Microsoft login documentation](https://minecraft-launcher-lib.readthedocs.io/en/stable/tutorial/microsoft_login.html))
-- A compatible Java runtime (the official Minecraft Launcher may provision one; otherwise install the version required by your selected game version)
+## Windows EXE
+1. Open the repository's **Actions → Build Windows EXE**.
+2. Download the successful run's **awMCClient-Windows-Alpha** artifact.
+3. Extract the ZIP and run `awMCClient.exe`.
+4. Click **OPEN MINECRAFT LAUNCHER**.
+5. Sign in and select the desired version **inside the official launcher**.
 
-## Start
+You must install the official Minecraft Launcher first: https://www.minecraft.net/download
+
+## Development
+Python 3.12+:
 ```powershell
-py -m pip install -r requirements.txt
 py app.py
 ```
 
-Or run `start.bat` on Windows after installing Python.
-
-## Configure Microsoft Login
-1. Register a **public client** app with Microsoft Entra and configure a redirect URI (e.g. `http://localhost`), allowing public client flows as applicable.
-2. Request the **Minecraft API permission**. New Azure apps need approval for Minecraft login. Follow the library's [current guide](https://minecraft-launcher-lib.readthedocs.io/en/stable/tutorial/microsoft_login.html).
-3. Copy `config.example.json` to `config.json`, enter your `client_id` and `redirect_uri`.
-4. Start the app, click **Sign in with Microsoft**, log in within your browser, then paste the *full redirected URL* into the launcher. The launcher verifies the OAuth state and completes the PKCE flow.
-5. Select **26.2** or **26.3**, then click **Install & Play**.
-
-No Microsoft password is typed into or stored by this program. Session data is kept in memory and you will sign in again on next launch.
-
-## Notes
-- The first game install can be large. Downloads and login occur in worker threads to keep the window responsive.
-- Game files are stored in `%APPDATA%\\.awMCClient\\minecraft`, separate from your regular Minecraft installation and worlds.
-- The game version must be present in Mojang's official version manifest; no unofficial builds are downloaded.
-- The game uses the Java runtime available on the local machine; runtime setup is not automated in v0.1.
-- There is currently no EXE build, mod loader, multiplayer enhancement, or account persistence.
-- **Do not commit** `config.json` or authentication tokens.
-- Minecraft is owned by Mojang/Microsoft; this is an independent, unofficial personal project.
+## Important limitations
+- This app **does not directly start Minecraft Java**. It opens the official launcher, where you select and start the game.
+- Version selection (including 26.2 and 26.3 if offered) takes place in the official launcher. awMC Client does not control or install specific versions.
+- The game requires a valid license.
+- This is an unofficial personal project, not affiliated with Mojang or Microsoft.
+- No account passwords or tokens are collected or stored.
