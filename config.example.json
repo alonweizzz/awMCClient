@@ -1,0 +1,4 @@
+{
+  "client_id": "PASTE_YOUR_AZURE_APPLICATION_CLIENT_ID",
+  "redirect_uri": "http://localhost"
+}
