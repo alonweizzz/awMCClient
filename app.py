@@ -16,23 +16,42 @@ LIGHT = {"bg": "#eef3f1", "panel": "#ffffff", "fg": "#162a26", "muted": "#526a65
 
 
 def open_launcher():
+    """Find the installed launcher without invoking an unregistered minecraft:// URI."""
     if sys.platform != "win32":
         raise RuntimeError("Windows is required.")
-    try:
-        os.startfile("minecraft://")
-        return
-    except OSError:
-        pass
-    paths = [
-        Path(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")) / "Minecraft Launcher" / "MinecraftLauncher.exe",
-        Path(os.environ.get("ProgramFiles", r"C:\Program Files")) / "Minecraft Launcher" / "MinecraftLauncher.exe",
-        Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Minecraft Launcher" / "MinecraftLauncher.exe",
+    local = Path(os.environ.get("LOCALAPPDATA", str(Path.home())))
+    pf = Path(os.environ.get("ProgramFiles", r"C:\\Program Files"))
+    pf86 = Path(os.environ.get("ProgramFiles(x86)", r"C:\\Program Files (x86)"))
+    candidates = [
+        pf86 / "Minecraft Launcher" / "MinecraftLauncher.exe",
+        pf / "Minecraft Launcher" / "MinecraftLauncher.exe",
+        local / "Programs" / "Minecraft Launcher" / "MinecraftLauncher.exe",
+        local / "Minecraft Launcher" / "MinecraftLauncher.exe",
+        local / "Microsoft" / "WindowsApps" / "MinecraftLauncher.exe",
     ]
-    for path in paths:
+    for path in candidates:
         if path.is_file():
             subprocess.Popen([str(path)], cwd=str(path.parent))
             return
-    raise FileNotFoundError("Official Minecraft Launcher not found. Install it from minecraft.net/download.")
+    # Windows Store installations may register an AppUserModelID instead of an exe path.
+    # Try the official Store app activation, which doesn't require the minecraft:// protocol.
+    try:
+        result = subprocess.run(
+            ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command",
+             "$app = Get-StartApps | Where-Object { $_.Name -eq 'Minecraft Launcher' } | Select-Object -First 1; "
+             "if ($app) { Start-Process explorer.exe ('shell:AppsFolder\\' + $app.AppID) } "
+             "else { exit 2 }"],
+            capture_output=True, text=True, timeout=15, check=False,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+        )
+        if result.returncode == 0:
+            return
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+    raise FileNotFoundError(
+        "Minecraft Launcher was not found. Install the official Minecraft Launcher "
+        "from https://www.minecraft.net/download, then try again."
+    )
 
 
 def open_folder(path):
